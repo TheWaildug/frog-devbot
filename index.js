@@ -4,7 +4,14 @@ const client = new Discord.Client();
 const express = require("express")
 const Topgg = require("@top-gg/sdk")
 const prefix = "!"
+const abc = require("./values/abc")
+const randommoderate = require("./randommoderate")
+const roles = require("./values/roles")
+const slurs = require("./values/slurs")
+const nsfw = require("./values/nsfw")
+const math = require("mathjs")
 const fs = require("fs");
+const mock = require("./mock")
 const token = process.env.token
 const ms = require("ms")
 const server = express()
@@ -35,52 +42,7 @@ client.on("ready", async () => {
          client.user.setPresence({ activity: { name: stat.toString(), type: `WATCHING` }, status: 'dnd' })
   })
   
-})
-setInterval(async function(){
-  
-   const list = await db.getAll()
-  const key = Object.keys(list)
-  key.forEach(async function(item, index, array) {
-    
-    if(item.toString().includes(`Guild-791760625243652127-MuteMS-`)){
-      const value = Object.values(list)
-      value.forEach(async function(iam,ide,arra){
-        if(ide == index){
-          if(Date.now() >= iam){
-            const userid = item.toString().replace(`Guild-791760625243652127-MuteMS-`,"")
-            console.log("user should be unmuted")
-            const guild = await client.guilds.fetch("752978800756916444")
-            if(guild){
-              db.delete(`Guild-791760625243652127-IsMuted-${userid}`)
-              db.delete(`Guild-791760625243652127-MuteMS-${userid}`)
-              let notsplit = await db.get(`Guild-791760625243652127-MuteMessage-${userid}`)
-              
-              console.log(notsplit)
-                let message
-                message = notsplit.split("/")
-                console.log(message[6])
-
-                const channel = await guild.channels.cache.find(c => c.id == message[5])  
-                const embed = new Discord.MessageEmbed()
-                .setTitle(`Moderation`)
-                .setDescription(`New Unmute`)
-                if(channel){
-                  channel.send(`Auto Unmuted <@${userid}>. Message link: ${notsplit}`)
-                }
-                db.delete(`Guild-791760625243652127-MuteMessage-${userid}`)
-                const user = await guild.members.cache.find(r => r.id == userid)
-                if(user){
-                  const role = await guild.roles.cache.find( r => r.id == "793938032860332086")
-                  if(role){
-                    user.roles.remove(role,`Auto Unmute`)
-                  }
-                }
-            }
-          }
-        }
-      })
-  }})
-},10000)
+})  
 
 reactionRoleManager.on('ready', () => {
     console.log('Reaction Role Manager is ready!');
@@ -109,7 +71,144 @@ reactionRoleManager.on('missingRequirements', (type, member, reactionRole) => {
 reactionRoleManager.on('missingPermissions', (action, member, roles, reactionRole) => {
     console.log(`Some roles cannot be ${action === 1 ? 'given' : 'taken'} to member \`${member.displayName}\`, because i don't have permissions to manage these roles: ${roles.map(role => `\`${role.name}\``).join(',')}`);
 });
+ function isbypass(user){
+ for (let i = 0; i < roles.length; i++) {
+ 
+   if(user.roles.cache.has(roles[i])){
+     
+     return true;
+   }
+ }
 
+ return false;
+}
+///Filter
+client.on("message",async message => {
+  if(message.guild == null){
+    return;
+  }
+  if(message.author.bot){
+    return;
+  }
+  
+  const emoji = message.guild.emojis.cache.get("808886280569225247")
+  if(message.content.toLowerCase().includes("https://discord.gg/") || message.content.toLowerCase().includes("discord.gg/")){
+        if(isbypass(message.member) === true){
+      console.log("this man can post invites?")
+    return;
+  }
+  console.log(`${message.member.id} posted invite.`)
+  message.channel.send(`${emoji} ${message.member}, you're not allowed to post Discord invites! Continuing will result in a mute`).then(msg => {
+    message.delete();
+    msg.delete({timeout: 5000})
+    return;
+  })
+  }
+
+let regexp = /^(?:(?:https?|ftp):\/\/)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/\S*)?$/;
+let cdu = regexp.test(message.content.toLowerCase().replace(/\s+/g, ''))
+   if(cdu == true ){
+        if(isbypass(message.member) === true){
+      console.log("this man can post links?")
+    return;
+  }
+  console.log(`${message.member.id} posted link.`)
+  message.channel.send(`${emoji} ${message.member}, you're not allowed to post links! Continuing will result in a mute`).then(msg => {
+    message.delete();
+    msg.delete({timeout: 5000})
+    return;
+  })
+  }
+  if(message.mentions.members.size >= 5){
+    if(isbypass(message.member) === true){
+      console.log("this man can spam ping?")
+    return;
+  }
+    console.log(`${message.member.id} spam pinged.`)
+    message.channel.send(`${emoji} ${message.member}, you're not allowed to spam ping users! Continuing will result in a mute`).then(msg => {
+      message.delete();
+      msg.delete({timeout: 5000})
+      return;
+    })
+  }
+  if(message.mentions.members.has("432345618028036097")){
+
+    if(isbypass(message.member) == true){
+      console.log("this man can ping frog")
+    return;
+  }
+     console.log(`${message.member.id} pinged froggo.`)
+    message.channel.send(`${emoji} ${message.member}, you're not allowed to ping TheWaildug! Continuing will result in a mute`).then(msg => {
+      message.delete();
+      msg.delete({timeout: 5000})
+      return;
+    })
+  }
+  
+const msg = message.content.split(" ").join("")
+  for (let i = 0; i < slurs.length; i++) {
+   if(msg.replace(/[^a-zA-Z ]/g, "").toLowerCase().includes(slurs[i])){
+       if(isbypass(message.member) == true){
+      console.log("this man can say slurs?")
+    return;
+  }
+      console.log(`${message.member.id} said slur.`)
+    
+    message.channel.send(`${emoji} ${message.member}, you're not allowed to use racial slurs! Continuing will result in a mute`).then(me => {
+      message.delete();
+      me.delete({timeout: 5000})
+      return;
+    })
+    return;
+    }
+
+   
+ }
+ 
+ for (let i = 0; i < nsfw.length; i++) {
+  
+   if(msg.replace(/[^a-zA-Z ]/g, "").toLowerCase().includes(nsfw[i])){
+    
+       if(isbypass(message.member) == true){
+      console.log("this man can say nsfw things?")
+    return;
+  }
+      console.log(`${message.member.id} said nsfw word.`)
+    
+    message.channel.send(`${emoji} ${message.member}, you're not allowed to say NSFW/Sexual things. Continuing will result in a mute`).then(me => {
+      message.delete();
+      me.delete({timeout: 5000})
+      return;
+    })
+    return;
+    }
+
+   
+ }
+
+  
+  
+})
+client.on("messageDelete", async message => {
+  if(message.guild == null){
+    return;
+  }
+  if(message.author.bot){
+    return;
+  }
+  const channel = message.guild.channels.cache.get("797584651060772864")
+  if(message.content){
+    console.log(`${message.author.id} deleted a message in the channel ${message.channel.id} with the content ${message.content}`)
+    const embed = new Discord.MessageEmbed()
+    .setTitle("Message Deleted")
+    .setColor("FF0000")
+    .addField(`Author`,`<@${message.author.id}>`)
+    .addField(`Channel`,`<#${message.channel.id}>`)
+    .addField(`Content`,`${message.content}`)
+    .setTimestamp()
+    channel.send(embed)
+  }
+})
 client.on("guildMemberAdd", async member => {
   console.log(`${member.user.tag} just joined the server!`)
   const {guild} = member
@@ -117,74 +216,77 @@ client.on("guildMemberAdd", async member => {
   if(!channel){
     return console.log(`I cannot find the welcome channel.`);
   }
+  if(member.id != "745325943035396230"){
+     let avatarurl = member.avatarURL({format: "jpg", dynamic: true, size: 512}) || member.user.defaultAvatarURL
+  console.log(avatarurl)
   const embed = new Discord.MessageEmbed()
   .setTitle(`Welcome to ${guild.name}!`)
   .setDescription(`Glad you could make it. Please make sure to read <#793607349041758238> to gain access to the server.`)
   .setColor("RANDOM")
-  .setThumbnail(member.user.avatarURL())
+  .setThumbnail(avatarurl)
   .setTimestamp()
   channel.send(`${member}`,embed)
+ 
+  }
+  const role = await guild.roles.fetch("793941958271303731")
+  if(member.id == "745325943035396230"){
+    member.roles.add(role,`stupid`)
+  }
 })
 
-client.on("guildBanAdd",async (guild, user) => {
-  
-   const fetchedLogs = await guild.fetchAuditLogs({
+
+
+///username change
+client.on("guildMemberUpdate", async (oldmember, newmember) => {
+  if(oldmember.displayName != newmember.displayName){
+    const fetchedLogs = await oldmember.guild.fetchAuditLogs({
 		limit: 1,
-		type: 22,
+		type: 24,
 	});
-  const banlog = fetchedLogs.entries.first();
-  if(!banlog){
-    return console.log(`${user.tag} was banned and that's all we know.`)
-  }
-   let { executor, target, reason } = banlog;
-   if(reason = null){
-     reason = "None."
-   }
-   console.log(`${executor.username}#${executor.discriminator} banned ${target.tag} with the reason ${reason}.`)
-   const embed = new Discord.MessageEmbed()
-    .setTitle(`GuildMember Update`)
-    .setDescription(`User Banned`)
-    .setColor("FF0000")
-    .addField(`User`,`<@${target.id}>`)
-    .addField(`Sender`,`<@${executor.id}>`)
-    .addField(`Reason`,`${reason}`)
-    .setTimestamp()
-     const channel = await guild.channels.cache.find(r => r.id == "794293979515977798")
-    if(!channel){
-      return console.log(`I cannot find the logs channel!`);
+  const nicklog = fetchedLogs.entries.first();
+  let { executor, target, reason } = nicklog;
+ if(reason == null){
+   reason = "None."
+ }
+ if(reason == "AFK"){
+   return;
+ }
+ if(reason == "Return from AFK"){
+   return;
+ }
+    if(reason.includes("Moderated by")){
+      return;
     }
-    channel.send(embed)
-})
-client.on("guildBanRemove",async (guild, user) => {
+  if(!nicklog){
+   console.log(`${oldmember.user.tag}'s username was changed from ${oldmember.displayName} to ${newmember.displayName} by an unknown user`)
+    const embed = new Discord.MessageEmbed()
+    .setTitle(`Nickname Change`)
   
-   const fetchedLogs = await guild.fetchAuditLogs({
-		limit: 1,
-		type: 23,
-	});
-  const banlog = fetchedLogs.entries.first();
-  if(!banlog){
-    return console.log(`${user.tag} was unbanned and that's all we know.`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${newmember.id}>`)
+    .addField(`Old Nickname`,oldmember.displayName)
+    .addField(`New Nickname`,newmember.displayName)
+     .setTimestamp()
+   const channel = await oldmember.guild.channels.cache.find(r=> r.id == "797584651060772864")
+    channel.send(embed)
   }
-   let { executor, target, reason } = banlog;
-   if(reason == null){
-     reason = "None."
-   }
-   console.log(`${executor.username}#${executor.discriminator} unbanned ${target.tag} with the reason ${reason}.`)
+  console.log(`${oldmember.user.tag}'s username was changed from ${oldmember.displayName} to ${newmember.displayName} by ${executor.tag}`)
+    const embed = new Discord.MessageEmbed()
+    .setTitle(`Nickname Change`)
    
-   const embed = new Discord.MessageEmbed()
-    .setTitle(`UNBAN`)
     .setColor("FF0000")
-    .addField(`User`,`<@${target.id}>`)
-    .addField(`Sender`,`<@${executor.id}>`)
-    .addField(`Reason`,`${reason}`)
-    .setTimestamp()
-      const channel = await guild.channels.cache.find(r => r.id == "794293979515977798")
-    if(!channel){
-      return console.log(`I cannot find the logs channel!`);
-    }
+    .addField(`User`,`<@${newmember.id}>`)
+    .addField(`Old Nickname`,oldmember.displayName)
+    .addField(`New Nickname`,newmember.displayName)
+    .addField("Reason",reason)
+    .addField(`Changer`,`<@${executor.id}>`)
+     .setTimestamp()
+   const channel = await oldmember.guild.channels.cache.find(r=> r.id == "797584651060772864")
     channel.send(embed)
-})
+  }
+})  
 server.post("/servervote", webhook.middleware(), async (req, res) => {
+  return;
   const user = await client.users.fetch(req.vote.user)
   if(!user){
     return console.log(`Cannot find user!`)
@@ -193,7 +295,7 @@ server.post("/servervote", webhook.middleware(), async (req, res) => {
   const embed = new Discord.MessageEmbed()
   .setColor("RANDOM")
   .setTitle("Thanks For Voting!")
-  .setDescription(`Thanks you for voting for my support server! You will have the "Voted" role in the support server, https://discord.gg/qyHnGP5yMP for 12 hours.`)
+  .setDescription(`Thanks you for voting for the support server! You will have the "Voted" role in the support server, https://discord.gg/qyHnGP5yMP for 12 hours.`)
   user.send(embed).catch(error => {
     console.log(`Error: ${error}`)
   })
@@ -220,11 +322,15 @@ server.post("/servervote", webhook.middleware(), async (req, res) => {
   }, 43200000)
       return;
 })
+
 client.on("message", async message => {
   if(message.guild == null){
     return;
   }
   if(!message.content.startsWith(prefix)){
+    return;
+  }
+  if(message.author.bot){
     return;
   }
   const args = message.content.slice(prefix.length).split(" ")
@@ -234,6 +340,8 @@ if(message.member.id != "432345618028036097"){
   return message.delete();
 }
    
+      console.log("Eval")
+    
       let code = message.content.split(" ").slice(1).join(" ")
      
       console.log(`Evaluate ${message.author.id}`)
@@ -242,41 +350,74 @@ if(message.member.id != "432345618028036097"){
     try {
       evaluated = await eval(`(async () => {  ${code}})()`);
       console.log(evaluated)
+      const evaltype = typeof evaluated;
       const embed = new Discord.MessageEmbed()
             .setTitle(`Evaluation`)
+            .setColor("RANDOM")
             .setDescription(`Evaluated in *${Date.now() - message.createdTimestamp + " ms"}.*`)
             .addField(`Input`,"```js\n" + code + "```")
             .addField(`Output`,"```js\n" + evaluated + "```")
+            .addField("Output Type", "`" + evaltype.toUpperCase() + "`")
             .setTimestamp()
-             message.author.send(`<@${message.author.id}>`,embed).catch(() => {
-               return message.channel.send(`Please open your DMs noob.`);
-             })
-            return message.delete();
+             message.channel.send(`<@${message.author.id}>`,embed)
+            
     } catch (e) {
       console.log(e)
           const embed = new Discord.MessageEmbed()
           .setTitle(`Evaluation`)
+              .setColor("RANDOM")
           .setDescription(`Error`)
           .addField(`Input`,"```js\n" + code + "```")
           .addField(`Error`,"```" + e + "```")
           .setTimestamp()
-           message.author.send(`<@${message.author.id}>`,embed).catch(() => {
-               return message.channel.send(`Please open your DMs noob.`);})
-return message.delete();
+           message.channel.send(`<@${message.author.id}>`,embed)
     }
+}else if(command == "role"){
+  client.Commands.get("role").execute(message,args)
+}else if(command == "cantlive"){
+  const emoji = message.guild.emojis.cache.get("808886280569225247")
+ 
+    
+  console.log(`${message.member.id} lost life privileges.`)
+  message.channel.send(`${emoji} ${message.member}, you're not allowed to live! Continuing will result in a mute.`).then(msg => {
+    message.delete();
+    msg.delete({timeout: 5000})
+    return;
+  })
+
+}else if(command == "mock"){
+  client.Commands.get("mock").execute(message,args)
+}else if(command == "slowmode"){
+  client.Commands.get("slowmode").execute(message,args,ms)
+}else if(command == "moderate"){
+  client.Commands.get("moderate").execute(message,args,abc)
 }else if(command == "restrict"){
   client.Commands.get("restrict").execute(message,args)
+}else if(command == "unrestrict"){
+  client.Commands.get("unrestrict").execute(message,args)
 }else if(command == "rr"){
   client.Commands.get(`reactionrole`).execute(message,args,reactionRoleManager)
 }else if(command == "rrremove"){
   client.Commands.get("rrremove").execute(message,args,reactionRoleManager)
+}else if(command == "ping"){
+  const ping = Date.now() - message.createdTimestamp
+  message.reply(`Pong! ${ping} ms.`)
 }else if(command == "react"){
   client.Commands.get("react").execute(message,args)
+}else if(command == "nick"){
+  client.Commands.get("nick").execute(message,args)
+}else if(command == "unban"){
+ 
+  if(!message.member.hasPermission(`BAN_MEMBERS`)){
+    return message.delete();
+  }
+  client.Commands.get("unban").execute(message,args,db,client)
+
 }else if(command == "ban"){
   if(!message.member.hasPermission(`BAN_MEMBERS`)){
     return message.delete();
   }
-  client.Commands.get("ban").execute(message,args)
+  client.Commands.get("ban").execute(message,args,db)
 }else if(command == "purge"){
   client.Commands.get("purge").execute(message,args)
 }else if(command == "status"){
@@ -298,5 +439,29 @@ client.login(token)
 server.all('/', (req, res)=>{
   res.send(':(')
 })
-
+server.post("/suggestion", async (req,res) => {
+   const body = req.body
+  const userid = body.userid
+  const suggestion = body.suggestion
+  let suggestionId = body.suggestionid
+ console.log("suggestion")
+  const exampleEmbed = new Discord.MessageEmbed()
+            .setColor("#FF0000")
+            .setTitle("Suggestions")
+            .setDescription(`New Suggestion from <@${userid}>`)
+            .addFields(
+              { name: "Suggestion: ", value: `${suggestion}`},
+      
+            )
+            .setTimestamp()
+            .setFooter(`Suggestion ID: ${suggestionId}.`)
+            .setColor('#1aff1a');
+           channel.send(exampleEmbed).then(sentEmbed => {
+          sentEmbed.react("👍")
+          sentEmbed.react("👎")
+          db.set('SuggestionId',Number(suggestionId) + 1)
+          db.set(`SuggestionId${suggestionId}`,sendembed.id)
+           })
+})
+ 
   server.listen(3000, ()=>{console.log("Server is Ready!")});

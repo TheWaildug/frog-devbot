@@ -21,7 +21,7 @@ const msg = await channel.messages.fetch(args[2]);
         const emoji = args[3];
         if (!emoji)
             return message.reply('You need use a valid emoji.')
-    const type = args[4]
+    let type = args[4]
     if(!type){
       type = 1
     }
